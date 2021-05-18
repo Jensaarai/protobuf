@@ -53,6 +53,8 @@ namespace Google.Protobuf
     [SecuritySafeCritical]
     public sealed class ByteString : IEnumerable<byte>, IEquatable<ByteString>
     {
+        private const int StackAllocThreshold = 1024;
+
         private static readonly ByteString empty = new ByteString(new byte[0]);
 
         private readonly ReadOnlyMemory<byte> bytes;
@@ -142,6 +144,17 @@ namespace Google.Protobuf
         /// <returns>A base64 representation of this <c>ByteString</c>.</returns>
         public string ToBase64()
         {
+#if NET5_0_OR_GREATER
+            if (Length <= StackAllocThreshold)
+            {
+                Span<char> chars = stackalloc char[StackAllocThreshold];
+                if (Convert.TryToBase64Chars(Span, chars, out int charsWritten))
+                {
+                    return new string(chars.Slice(0, charsWritten));
+                }
+            }
+#endif
+
             if (MemoryMarshal.TryGetArray(bytes, out ArraySegment<byte> segment))
             {
                 // Fast path. ByteString was created with an array, so pass the underlying array.
@@ -161,7 +174,20 @@ namespace Google.Protobuf
         {
             // By handling the empty string explicitly, we not only optimize but we fix a
             // problem on CF 2.0. See issue 61 for details.
-            return bytes == "" ? Empty : new ByteString(Convert.FromBase64String(bytes));
+            if (bytes == string.Empty)
+            {
+                return Empty;
+            }
+
+#if NET5_0_OR_GREATER
+            byte[] buffer = new byte[bytes.Length];
+            if (Convert.TryFromBase64String(bytes, buffer, out int bytesWritten))
+            {
+                return new ByteString(buffer.AsMemory(0, bytesWritten));
+            }
+#endif
+
+            return new ByteString(Convert.FromBase64String(bytes));
         }
 
         /// <summary>
