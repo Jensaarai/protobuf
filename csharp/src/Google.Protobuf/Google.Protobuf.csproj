@@ -8,7 +8,7 @@
     <!-- C# 7.2 is required for Span/BufferWriter/ReadOnlySequence -->
     <LangVersion>7.2</LangVersion>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>netstandard1.1;netstandard2.0;net45;net50</TargetFrameworks>
+    <TargetFrameworks>netstandard1.1;netstandard2.0;net45;net5.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyOriginatorKeyFile>../../keys/Google.Protobuf.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
@@ -27,7 +27,7 @@
     <DefineConstants>$(DefineConstants);GOOGLE_PROTOBUF_SUPPORT_FAST_STRING</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net50' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
     <DefineConstants>$(DefineConstants);GOOGLE_PROTOBUF_SUPPORT_FAST_STRING;GOOGLE_PROTOBUF_SIMD</DefineConstants>
   </PropertyGroup>
 

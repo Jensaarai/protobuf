@@ -145,16 +145,13 @@ namespace Google.Protobuf
         public string ToBase64()
         {
 #if NET5_0_OR_GREATER
-            if (Length <= StackAllocThreshold)
+            int base64Len = ((Length + 2) / 3) * 4;
+            Span<char> chars = base64Len <= StackAllocThreshold ? stackalloc char[base64Len] : new char[base64Len];
+            if (Convert.TryToBase64Chars(Span, chars, out int charsWritten))
             {
-                Span<char> chars = stackalloc char[StackAllocThreshold];
-                if (Convert.TryToBase64Chars(Span, chars, out int charsWritten))
-                {
-                    return new string(chars.Slice(0, charsWritten));
-                }
+                return new string(chars.Slice(0, charsWritten));
             }
 #endif
-
             if (MemoryMarshal.TryGetArray(bytes, out ArraySegment<byte> segment))
             {
                 // Fast path. ByteString was created with an array, so pass the underlying array.
@@ -180,7 +177,7 @@ namespace Google.Protobuf
             }
 
 #if NET5_0_OR_GREATER
-            byte[] buffer = new byte[bytes.Length];
+            byte[] buffer = new byte[(bytes.Length + 2) * 3 / 4];
             if (Convert.TryFromBase64String(bytes, buffer, out int bytesWritten))
             {
                 return new ByteString(buffer.AsMemory(0, bytesWritten));
